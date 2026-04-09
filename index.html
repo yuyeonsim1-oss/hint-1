@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>오늘의 나를 위한 추천 Hint</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  background:#f6eff3;
+  color:#222;
+}
+.wrap{max-width:430px;margin:0 auto;min-height:100vh;padding:10px 12px 18px;}
+.card{background:#f8f8f8;border-radius:24px;padding:16px;margin-bottom:10px;}
+.hero{padding:18px 18px 16px;background:#f8f8f8;}
+h1{margin:0;font-size:24px;line-height:1.25;letter-spacing:-1px;color:#de6cab;font-weight:800;}
+.sub{margin-top:12px;font-size:15px;line-height:1.5;color:#7a7a7a;word-break:keep-all;}
+.section-title{font-size:18px;font-weight:800;margin:0 0 10px;letter-spacing:-.5px;}
+.weather-list{display:flex;gap:8px;flex-wrap:nowrap;justify-content:space-between;}
+button{border:none;cursor:pointer;font-family:inherit;}
+.weather-btn{flex:1;min-width:0;height:46px;padding:0 4px;border-radius:23px;background:#f5dbe6;color:#1f78ff;font-size:14px;font-weight:700;}
+.weather-btn.active{background:#f47cb0;color:#fff;box-shadow:0 8px 18px rgba(244,124,176,.24);}
+.main-list{display:flex;flex-direction:column;gap:12px;}
+.main-btn{
+  width:100%;min-height:74px;border-radius:24px;
+  background:linear-gradient(90deg,#efa8c8 0%,#f47eb5 100%);
+  color:#fff;font-size:18px;font-weight:800;letter-spacing:-.5px;
+  box-shadow:0 6px 16px rgba(235,125,178,.16);
+}
+.main-btn.small{min-height:56px;font-size:16px;border-radius:18px;}
+.main-btn.active{transform:scale(.99);box-shadow:0 10px 20px rgba(235,125,178,.22);}
+#subSection,#fortuneSection{margin-top:10px;}
+.sub-label{font-size:14px;font-weight:800;margin:0 0 8px;color:#4f4f4f;}
+.subgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+.sub-btn{
+  min-height:50px;border-radius:16px;background:#fff;border:2px solid #f1d6e4;
+  color:#de6cab;font-size:14px;font-weight:700;padding:0 10px;
+}
+.sub-btn.active{background:#fde7f0;border-color:#f08ab8;}
+.input-box{
+  width:100%;min-height:50px;border-radius:16px;background:#fff;border:2px solid #f1d6e4;
+  color:#555;font-size:14px;font-weight:700;padding:0 12px;outline:none;
+}
+.input-box:focus{border-color:#f08ab8;}
+.result{background:#fff;border-radius:28px;padding:22px 20px 20px;margin-top:10px;box-shadow:0 6px 18px rgba(0,0,0,.04);}
+.result h2{margin:0 0 10px;font-size:18px;color:#de6cab;letter-spacing:-.5px;}
+.msg{font-size:14px;line-height:1.7;color:#4b4b4b;white-space:pre-line;word-break:keep-all;}
+.links{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+.link-btn{
+  display:block;text-decoration:none;text-align:center;padding:11px 10px;border-radius:14px;
+  background:#fff4cb;color:#826400;font-weight:800;font-size:14px;border:1px solid #f2e1a0;
+}
+.tip{margin-top:8px;font-size:12px;color:#8b8b8b;line-height:1.5;}
+.badge{display:inline-block;padding:6px 10px;border-radius:999px;background:#fde7f0;color:#d85f9d;font-weight:800;font-size:12px;margin-bottom:8px;}
+.premium-row{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px;}
+.notice{
+  background:#fff7fb;border:1px solid #f3d7e6;border-radius:16px;padding:12px 14px;margin-top:10px;
+  color:#7b5f69;font-size:12px;line-height:1.6;
+}
+.mini{font-size:12px;color:#8b8b8b;margin-top:6px;line-height:1.5;}
+.hidden{display:none !important;}
+hr.soft{border:none;border-top:1px solid #f1e2ea;margin:14px 0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card hero">
+    <h1>오늘의 나를 위한 추천 Hint</h1>
+    <div class="sub">날씨에 맞는 오늘을 완성해주는 힌트 앱 🌸</div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">오늘 날씨</div>
+    <div class="weather-list" id="weatherWrap">
+      <button type="button" class="weather-btn" data-weather="맑음" onclick="selectWeather('맑음')">맑음</button>
+      <button type="button" class="weather-btn" data-weather="비" onclick="selectWeather('비')">비</button>
+      <button type="button" class="weather-btn" data-weather="흐림" onclick="selectWeather('흐림')">흐림</button>
+      <button type="button" class="weather-btn" data-weather="추움" onclick="selectWeather('추움')">추움</button>
+      <button type="button" class="weather-btn" data-weather="더움" onclick="selectWeather('더움')">더움</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="main-list" id="mainWrap">
+      <button type="button" class="main-btn" data-main="코디" onclick="selectMain('코디')">👗 코디 추천</button>
+      <button type="button" class="main-btn" data-main="카페" onclick="selectMain('카페')">☕ 카페 추천</button>
+      <button type="button" class="main-btn" data-main="음식" onclick="selectMain('음식')">🍽️ 음식 추천</button>
+      <button type="button" class="main-btn" data-main="운세" onclick="selectMain('운세')">🔮 오늘의 운세</button>
+    </div>
+
+    <div id="subSection" style="display:none;">
+      <div class="sub-label" id="subLabel">세부 선택</div>
+      <div class="subgrid" id="subWrap"></div>
+    </div>
+
+    <div id="fortuneSection" style="display:none;">
+      <div class="badge">오늘의 운세 무료</div>
+      <div class="sub-label">운세 정보 입력</div>
+      <div class="subgrid">
+        <input type="date" id="birth" class="input-box" />
+        <input type="time" id="birthTime" class="input-box" />
+      </div>
+
+      <div class="mini">태어난 시간은 우리나라 시간 기준으로 선택해 주세요.</div>
+
+      <div class="sub-label" style="margin-top:12px;">달력 기준</div>
+      <div class="subgrid" id="calendarTypeWrap">
+        <button type="button" class="sub-btn fortune-opt" data-group="type" data-value="양력" onclick="selectFortuneOption('type','양력')">양력</button>
+        <button type="button" class="sub-btn fortune-opt" data-group="type" data-value="음력" onclick="selectFortuneOption('type','음력')">음력</button>
+      </div>
+
+      <div class="sub-label" style="margin-top:12px;">월 구분</div>
+      <div class="subgrid" id="leapWrap">
+        <button type="button" class="sub-btn fortune-opt" data-group="leap" data-value="평달" onclick="selectFortuneOption('leap','평달')">평달</button>
+        <button type="button" class="sub-btn fortune-opt" data-group="leap" data-value="윤달" onclick="selectFortuneOption('leap','윤달')">윤달</button>
+      </div>
+
+      <div class="sub-label" style="margin-top:12px;">성별 선택</div>
+      <div class="subgrid" id="genderWrap">
+        <button type="button" class="sub-btn fortune-opt" data-group="gender" data-value="남" onclick="selectFortuneOption('gender','남')">남</button>
+        <button type="button" class="sub-btn fortune-opt" data-group="gender" data-value="여" onclick="selectFortuneOption('gender','여')">여</button>
+      </div>
+
+      <button class="main-btn small" id="fortuneViewBtn" style="margin-top:12px;" onclick="showFortune()">무료 오늘의 운세 조회</button>
+
+      <hr class="soft" />
+      <div class="badge">유료 버전 0.1π</div>
+      <div class="sub-label">프리미엄 카테고리</div>
+      <div class="premium-row">
+        <button class="main-btn small premium-btn" data-premium="전통사주" onclick="startPremiumFlow('전통사주')">전통사주 · 0.1π</button>
+        <button class="main-btn small premium-btn" data-premium="토정비결" onclick="startPremiumFlow('토정비결')">토정비결 · 0.1π</button>
+        <button class="main-btn small premium-btn" data-premium="궁합" onclick="startPremiumFlow('궁합')">궁합 · 0.1π</button>
+      </div>
+      <div class="notice">
+        실제 결제는 Pi Browser에서 Pi SDK가 정상 연결된 경우에만 작동합니다.<br/>
+        일반 브라우저에서는 결제 미리보기만 보일 수 있습니다.
+      </div>
+    </div>
+
+    <div class="result" id="result">
+      <h2>오늘의 추천</h2>
+      <div class="msg">오늘 날씨를 고른 뒤,
+원하는 추천 버튼을 눌러보세요.
+부드럽고 감성 있게 어울리는 선택을 안내해드릴게요.</div>
+      <div class="tip">코디는 남성 · 여성 · 키즈 남아 · 키즈 여아로 나뉘어 더 자세하게 추천돼요.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const state = { weather:"", main:"", sub:"" };
+const fortuneState = { type:"", leap:"", gender:"" };
+const partnerState = { type:"", leap:"", gender:"" };
+let piUser = null;
+
+const subOptions = {
+  "코디": ["남성", "여성", "키즈 남아", "키즈 여아"]
+};
+
+const outfitData = {
+  "맑음": {
+    "남성": [
+      "화이트 옥스퍼드 셔츠 + 라이트블루 스트레이트 데님 + 브라운 로퍼 + 얇은 시계\n깔끔하고 산뜻한 분위기로 데일리 외출에 잘 어울려요.",
+      "크림 반팔 니트 + 베이지 치노 팬츠 + 화이트 스니커즈 + 라이트 카키 캔버스백\n부드럽고 단정한 감성 코디예요.",
+      "하늘색 셔츠 + 아이보리 슬랙스 + 미니멀 스니커즈 + 선글라스 포인트\n맑은 날씨와 잘 맞는 시원한 무드예요.",
+      "네이비 카라 니트 + 연청 데님 + 화이트 운동화 + 얇은 바람막이\n무난하지만 세련된 남친룩 느낌이에요."
+    ],
+    "여성": [
+      "플라워 블라우스 + 크림 롱스커트 + 메리제인 슈즈 + 미니 숄더백\n햇살 좋은 날 예쁘게 어울리는 여성스러운 코디예요.",
+      "아이보리 가디건 + 연핑크 원피스 + 플랫슈즈 + 진주 이어링\n부드럽고 사랑스러운 분위기를 살려줘요.",
+      "라이트블루 셔츠 + 화이트 와이드 팬츠 + 실버 플랫 + 얇은 헤어핀\n시원하고 깨끗한 감성 코디예요.",
+      "크롭 니트탑 + 데님 롱스커트 + 스니커즈 + 에코백\n꾸안꾸 느낌으로 편하게 입기 좋아요."
+    ],
+    "키즈 남아": [
+      "스트라이프 티셔츠 + 연청 반바지 + 스니커즈 + 볼캡\n활동하기 편하고 귀여운 데일리 코디예요.",
+      "민트 맨투맨 + 크림 조거팬츠 + 운동화\n산뜻하고 편안해서 뛰어놀기 좋아요.",
+      "체크 셔츠 + 베이지 면바지 + 슬립온\n단정하면서도 발랄한 느낌이에요.",
+      "프린팅 반팔티 + 카고 반바지 + 샌들\n맑은 날 야외 나들이에 잘 어울려요."
+    ],
+    "키즈 여아": [
+      "레이스 카라 원피스 + 화이트 양말 + 메리제인 슈즈\n사랑스럽고 단정한 분위기의 코디예요.",
+      "핑크 가디건 + 플라워 스커트 + 스니커즈\n산뜻하고 귀여운 봄 느낌이 나요.",
+      "퍼프 블라우스 + 데님 치마 + 리본 머리띠\n사진 찍기 좋은 러블리한 조합이에요.",
+      "스트라이프 티셔츠 + 크림 치마바지 + 샌들\n편안하면서 발랄한 데일리 코디예요."
+    ]
+  },
+  "흐림": {
+    "남성": [
+      "차콜 가디건 + 화이트 티셔츠 + 진청 데님 + 블랙 스니커즈\n흐린 날 차분한 분위기를 살려주는 코디예요.",
+      "그레이 맨투맨 + 베이지 와이드 팬츠 + 캔버스화\n편안하면서도 깔끔한 무드예요.",
+      "네이비 셔츠 자켓 + 아이보리 티 + 블랙 팬츠 + 스니커즈\n은은하게 멋낸 느낌이 좋아요.",
+      "모카 니트 + 크림 슬랙스 + 브라운 로퍼\n부드럽고 따뜻한 인상을 줘요."
+    ],
+    "여성": [
+      "라벤더 가디건 + 화이트 블라우스 + 그레이 플리츠 스커트\n흐린 날에도 얼굴을 화사하게 보여줘요.",
+      "베이지 트렌치 + 블랙 원피스 + 플랫슈즈\n차분하고 세련된 분위기에 잘 어울려요.",
+      "소프트 블루 니트 + 연청 데님 + 로퍼\n부드럽고 편안한 감성 데일리룩이에요.",
+      "크림 셔츠 + 브라운 롱스커트 + 미니백\n은은하고 감성적인 무드가 살아나요."
+    ],
+    "키즈 남아": [
+      "후드티 + 조거팬츠 + 운동화\n흐린 날 편안하게 입기 좋은 코디예요.",
+      "체크 남방 + 면바지 + 슬립온\n단정하면서 귀여운 느낌이에요.",
+      "라이트 그레이 맨투맨 + 청바지 + 볼캡\n활동하기 편한 데일리룩이에요.",
+      "네이비 바람막이 + 반팔티 + 카고팬츠\n간절기 흐린 날에 딱 좋아요."
+    ],
+    "키즈 여아": [
+      "가디건 + 잔꽃 원피스 + 스니커즈\n흐린 날에도 사랑스러운 분위기를 살려줘요.",
+      "맨투맨 + 튤 스커트 + 운동화\n편안하면서도 귀여운 조합이에요.",
+      "베이지 자켓 + 체크 스커트 + 양말슈즈\n단정하고 발랄한 느낌이 예뻐요.",
+      "리본 블라우스 + 면치마바지 + 플랫슈즈\n차분하고 단아한 키즈 코디예요."
+    ]
+  },
+  "비": {
+    "남성": [
+      "방수 바람막이 + 블랙 티셔츠 + 카고 팬츠 + 방수 스니커즈\n비 오는 날 실용적이고 멋스러운 코디예요.",
+      "네이비 후드집업 + 조거팬츠 + 발수 운동화\n편안하면서 깔끔한 비 오는 날 룩이에요.",
+      "그레이 셔츠 + 블랙 슬랙스 + 로퍼 + 우산 포인트\n차분하고 도시적인 느낌이에요.",
+      "카키 자켓 + 기본티 + 진청 데님 + 스니커즈\n축축한 날씨에도 안정감 있는 컬러 조합이에요."
+    ],
+    "여성": [
+      "생활방수 트렌치 + 니트 원피스 + 앵클부츠\n비 오는 날 우아하게 입기 좋아요.",
+      "후드집업 + 와이드 팬츠 + 발수 스니커즈\n편안하고 실용적인 데일리 코디예요.",
+      "블랙 가디건 + 플라워 원피스 + 로퍼\n비 오는 날 차분한 감성을 살려줘요.",
+      "베이지 자켓 + 슬림 팬츠 + 메리제인\n무난하지만 세련된 레인룩이에요."
+    ],
+    "키즈 남아": [
+      "후드 레인점퍼 + 조거팬츠 + 운동화\n젖어도 부담 적고 활동하기 좋아요.",
+      "프린트 반팔 + 방수 바람막이 + 반바지\n가벼운 비 오는 날에 잘 어울려요.",
+      "맨투맨 + 면바지 + 미끄럼 덜한 운동화\n실내외 이동에 편한 조합이에요.",
+      "체크 셔츠 + 데님 + 캡모자\n비 오는 날에도 귀엽게 입기 좋아요."
+    ],
+    "키즈 여아": [
+      "레인코트 + 레깅스 + 운동화\n비 오는 날 가장 실용적이면서 귀여워요.",
+      "가디건 + 원피스 + 앵클부츠\n축축한 날에도 단정한 느낌이에요.",
+      "후드티 + 치마바지 + 스니커즈\n편안하게 움직이기 좋은 조합이에요.",
+      "핑크 점퍼 + 면바지 + 리본핀\n우중충한 날씨에 화사함을 더해줘요."
+    ]
+  },
+  "추움": {
+    "남성": [
+      "울 코트 + 터틀넥 니트 + 슬랙스 + 첼시부츠\n추운 날 깔끔하게 갖춰 입기 좋아요.",
+      "패딩 + 기모 맨투맨 + 조거팬츠 + 운동화\n보온성과 활동성을 모두 챙긴 코디예요.",
+      "니트집업 + 히트텍 + 진청 데님 + 목도리\n실내외 이동이 많은 날 편해요.",
+      "무스탕 자켓 + 크림 니트 + 블랙 팬츠\n겨울 감성이 살아나는 조합이에요."
+    ],
+    "여성": [
+      "롱코트 + 니트 원피스 + 롱부츠\n따뜻하면서 분위기 있는 겨울 코디예요.",
+      "패딩 + 기모 후드 + 와이드 팬츠 + 어그 스타일 슈즈\n편안하고 포근한 무드예요.",
+      "숏패딩 + 터틀넥 + 플리츠 스커트 + 타이즈\n사랑스럽고 따뜻한 조합이에요.",
+      "덤블 자켓 + 니트 + 데님 + 머플러\n캐주얼하면서도 포근해 보여요."
+    ],
+    "키즈 남아": [
+      "패딩 점퍼 + 기모 맨투맨 + 조거팬츠\n추운 날 기본으로 든든한 코디예요.",
+      "니트 + 면바지 + 목도리\n단정하고 따뜻하게 입기 좋아요.",
+      "후리스 집업 + 청바지 + 운동화\n실내외 모두 편안한 데일리룩이에요.",
+      "패딩조끼 + 후드티 + 기모바지\n활동성 높은 아이에게 좋아요."
+    ],
+    "키즈 여아": [
+      "패딩 코트 + 니트 원피스 + 레깅스\n포근하고 사랑스러운 겨울 코디예요.",
+      "가디건 + 기모 치마바지 + 양말슈즈\n실내 활동에도 편안해요.",
+      "후리스 + 플라워 원피스 + 타이즈\n따뜻하면서 귀여운 무드예요.",
+      "숏패딩 + 맨투맨 + 레깅스\n활동하기 편한 겨울 데일리룩이에요."
+    ]
+  },
+  "더움": {
+    "남성": [
+      "린넨 반팔 셔츠 + 아이보리 쇼츠 + 샌들\n시원하고 깔끔한 여름 코디예요.",
+      "오버핏 반팔티 + 카고 반바지 + 스니커즈\n편안하고 트렌디한 무드예요.",
+      "라이트블루 반팔 셔츠 + 슬랙스 쇼츠 + 로퍼\n단정한 여름 외출룩이에요.",
+      "민소매 레이어드 반팔 + 밴딩 팬츠 + 캡모자\n휴양지 느낌으로 입기 좋아요."
+    ],
+    "여성": [
+      "린넨 원피스 + 샌들 + 라탄백\n가볍고 시원한 여름 감성이 살아나요.",
+      "반팔 블라우스 + 플레어 스커트 + 플랫슈즈\n단정하면서도 산뜻한 코디예요.",
+      "슬리브리스 + 얇은 가디건 + 와이드 팬츠\n실내 냉방까지 고려한 조합이에요.",
+      "퍼프 반팔 원피스 + 샌들 + 헤어클립\n사랑스럽고 시원하게 입기 좋아요."
+    ],
+    "키즈 남아": [
+      "프린트 반팔티 + 면 반바지 + 샌들\n시원하고 활동하기 편해요.",
+      "민소매 + 조거 반바지 + 운동화\n뛰어놀기 좋은 여름 코디예요.",
+      "스트라이프 반팔 + 카고 쇼츠\n깔끔하고 귀여운 분위기예요.",
+      "체크 셔츠 + 얇은 반바지 + 캡모자\n햇빛 많은 날 나들이용으로 좋아요."
+    ],
+    "키즈 여아": [
+      "민소매 원피스 + 샌들 + 헤어리본\n시원하고 사랑스러운 여름 코디예요.",
+      "반팔 티셔츠 + 치마바지 + 운동화\n활동성과 귀여움을 같이 챙겨줘요.",
+      "플라워 원피스 + 메리제인 슈즈\n사진 찍기 좋은 화사한 무드예요.",
+      "퍼프 블라우스 + 반바지 + 샌들\n산뜻하고 발랄한 여름 느낌이에요."
+    ]
+  }
+};
+
+const foodData = {
+  "맑음": [
+    { name:"들기름 막국수", desc:"깔끔하고 산뜻해서 맑은 날 가볍게 즐기기 좋아요." },
+    { name:"포케", desc:"상큼하고 부담이 적어서 햇살 좋은 날 잘 어울려요." },
+    { name:"파스타", desc:"기분 좋은 외출날 분위기 있게 먹기 좋은 메뉴예요." },
+    { name:"쌀국수", desc:"깔끔한 국물과 가벼운 면 조합이 편안해요." }
+  ],
+  "흐림": [
+    { name:"크림파스타", desc:"흐린 날엔 부드럽고 고소한 메뉴가 더 위로가 돼요." },
+    { name:"리조또", desc:"차분한 날씨에 포근하게 즐기기 좋아요." },
+    { name:"수제버거", desc:"묵직한 만족감이 있어 흐린 날 기분 전환에 좋아요." },
+    { name:"돈까스", desc:"무난하면서 든든하게 먹기 좋은 메뉴예요." }
+  ],
+  "비": [
+    { name:"칼국수", desc:"비 오는 날엔 따뜻한 국물 메뉴가 제일 먼저 생각나요." },
+    { name:"국밥", desc:"속을 편안하게 데워주는 든든한 선택이에요." },
+    { name:"짬뽕", desc:"칼칼하고 뜨끈해서 축축한 날씨와 잘 맞아요." },
+    { name:"수제비", desc:"비 오는 날 감성까지 챙기는 포근한 메뉴예요." }
+  ],
+  "추움": [
+    { name:"샤브샤브", desc:"추운 날 몸을 따뜻하게 녹여주는 메뉴예요." },
+    { name:"곰탕", desc:"속 편하고 든든해서 겨울철에 특히 좋아요." },
+    { name:"부대찌개", desc:"따뜻하고 진한 국물이 입맛을 살려줘요." },
+    { name:"전골", desc:"여럿이 먹기에도 좋고 추위를 달래주기 좋아요." }
+  ],
+  "더움": [
+    { name:"냉면", desc:"더운 날 가장 시원하고 만족감 높은 메뉴예요." },
+    { name:"초밥", desc:"가볍고 산뜻해서 더운 날 부담이 적어요." },
+    { name:"메밀소바", desc:"깔끔하고 시원한 맛이 여름과 잘 어울려요." },
+    { name:"콩국수", desc:"고소하고 시원하게 한 끼 해결하기 좋아요." }
+  ]
+};
+
+const cafeData = {
+  "맑음": [
+    { name:"아이스 라테", desc:"햇살 좋은 날 부드럽고 깔끔하게 즐기기 좋아요." },
+    { name:"자몽에이드", desc:"상큼하고 청량해서 기분 전환에 잘 어울려요." },
+    { name:"바닐라 콜드브루", desc:"달콤함과 커피향을 같이 느끼기 좋아요." },
+    { name:"레몬 케이크", desc:"산뜻한 디저트가 맑은 날과 잘 맞아요." }
+  ],
+  "흐림": [
+    { name:"카페라테", desc:"부드럽고 포근한 맛이 흐린 날 잘 어울려요." },
+    { name:"밀크티", desc:"차분한 날씨에 은은하게 즐기기 좋은 메뉴예요." },
+    { name:"티라미수", desc:"달콤하고 진한 디저트로 기분을 올려줘요." },
+    { name:"허니브레드", desc:"여유롭게 쉬고 싶은 날 잘 맞아요." }
+  ],
+  "비": [
+    { name:"카푸치노", desc:"따뜻하고 포근한 거품이 비 오는 날 감성과 잘 맞아요." },
+    { name:"핫초코", desc:"몸도 마음도 녹여주는 부드러운 선택이에요." },
+    { name:"얼그레이 티", desc:"차분하게 쉬고 싶을 때 잘 어울려요." },
+    { name:"치즈케이크", desc:"묵직한 달콤함이 우중충한 기분을 달래줘요." }
+  ],
+  "추움": [
+    { name:"고구마 라테", desc:"따뜻하고 달콤해서 겨울철에 특히 잘 맞아요." },
+    { name:"카페모카", desc:"초코와 커피의 조합이 포근한 느낌을 줘요." },
+    { name:"생강차", desc:"몸을 따뜻하게 해주고 편안한 느낌이 있어요." },
+    { name:"와플", desc:"따뜻한 디저트와 음료를 같이 즐기기 좋아요." }
+  ],
+  "더움": [
+    { name:"아이스 아메리카노", desc:"더운 날 가장 가볍고 시원하게 마시기 좋아요." },
+    { name:"복숭아 아이스티", desc:"달콤하고 청량해서 여름과 잘 어울려요." },
+    { name:"망고 스무디", desc:"상큼하고 시원한 디저트 음료 느낌이에요." },
+    { name:"딸기 요거트", desc:"산뜻하고 부드러워서 부담 없이 즐기기 좋아요." }
+  ]
+};
+
+function randomPick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+
+function selectWeather(val){
+  state.weather = val;
+  setActive('.weather-btn', state.weather, 'weather');
+  refreshResult();
+}
+function selectMain(val){
+  state.main = val;
+  state.sub = "";
+  setActive('.main-btn[data-main]', state.main, 'main');
+  renderSubOptions();
+  refreshResult();
+}
+function selectFortuneOption(group, value){
+  fortuneState[group] = value;
+  document.querySelectorAll(`.fortune-opt[data-group="${group}"]`).forEach(el => {
+    el.classList.toggle('active', el.dataset.value === fortuneState[group]);
+  });
+}
+function setActive(groupSelector, value, dataKey){
+  document.querySelectorAll(groupSelector).forEach(btn => {
+    btn.classList.toggle("active", btn.dataset[dataKey] === value);
+  });
+}
+function naverSearchLink(query){
+  return "https://m.search.naver.com/search.naver?query=" + encodeURIComponent(query);
+}
+
+function bindUiEvents(){
+  document.querySelectorAll('.weather-btn').forEach(btn => {
+    btn.onclick = () => selectWeather(btn.dataset.weather);
+  });
+
+  document.querySelectorAll('.main-btn[data-main]').forEach(btn => {
+    btn.onclick = () => selectMain(btn.dataset.main);
+  });
+
+  document.querySelectorAll('.fortune-opt').forEach(btn => {
+    btn.onclick = () => selectFortuneOption(btn.dataset.group, btn.dataset.value);
+  });
+
+  const fortuneBtn = document.getElementById('fortuneViewBtn');
+  if(fortuneBtn) fortuneBtn.onclick = showFortune;
+
+  document.querySelectorAll('.premium-btn').forEach(btn => {
+    btn.onclick = () => startPremiumFlow(btn.dataset.premium);
+  });
+}
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', bindUiEvents);
+}else{
+  bindUiEvents();
+}
+
+function renderSubOptions(){
+  const section = document.getElementById('subSection');
+  const wrap = document.getElementById('subWrap');
+  const fortuneSection = document.getElementById('fortuneSection');
+
+  if(state.main === "코디"){
+    section.style.display = "block";
+    fortuneSection.style.display = "none";
+    wrap.innerHTML = "";
+    subOptions["코디"].forEach(option => {
+      const b = document.createElement('button');
+      b.className = 'sub-btn';
+      b.textContent = option;
+      b.dataset.sub = option;
+      b.onclick = () => {
+        state.sub = option;
+        setActive('#subWrap .sub-btn', state.sub, 'sub');
+        refreshResult();
+      };
+      wrap.appendChild(b);
+    });
+  }else if(state.main === "운세"){
+    section.style.display = "none";
+    wrap.innerHTML = "";
+    fortuneSection.style.display = "block";
+  }else{
+    section.style.display = "none";
+    wrap.innerHTML = "";
+    fortuneSection.style.display = "none";
+  }
+}
+
+function refreshResult(){
+  const result = document.getElementById('result');
+  if(state.main === "운세"){
+    result.innerHTML = `
+      <h2>🔮 오늘의 운세</h2>
+      <div class="msg">생년월일, 태어난 시간, 음력·양력, 윤달 여부, 남·여를 선택한 뒤
+무료 오늘의 운세를 조회해보세요.
+
+프리미엄 버튼을 누르면
+전통사주 · 토정비결 · 궁합 카테고리도 이용할 수 있어요.</div>
+      <div class="tip">오늘의 운세는 무료예요. 프리미엄 카테고리는 0.1π 결제 후 확인되도록 구성했어요.</div>
+    `;
+    return;
+  }
+
+  if(!state.weather){
+    result.innerHTML = `
+      <h2>오늘의 추천</h2>
+      <div class="msg">먼저 오늘 날씨를 골라주세요.
+그 다음 코디, 음식, 카페 중 원하는 추천을 눌러주시면 돼요.</div>
+      <div class="tip">날씨 기반으로 더 자연스럽게 추천해드릴게요.</div>
+    `;
+    return;
+  }
+  if(!state.main){
+    result.innerHTML = `
+      <h2>${state.weather} 날씨가 선택됐어요</h2>
+      <div class="msg">좋아요.
+이제 코디, 음식, 카페, 오늘의 운세 중 원하는 메뉴를 골라주세요.</div>
+      <div class="tip">오늘 기분과 날씨에 맞춰 랜덤으로 보여드려요.</div>
+    `;
+    return;
+  }
+  if(state.main === "코디"){
+    if(!state.sub){
+      result.innerHTML = `
+        <h2>${state.weather} 날씨 코디</h2>
+        <div class="msg">코디는 더 디테일하게 추천해드리기 위해
+남성 / 여성 / 키즈 남아 / 키즈 여아 중 하나를 골라주세요.</div>
+        <div class="tip">같은 날씨여도 누를 때마다 다른 코디가 나올 수 있어요.</div>
+      `;
+      return;
+    }
+    const item = randomPick(outfitData[state.weather][state.sub]);
+    result.innerHTML = `
+      <h2>${state.weather} · ${state.sub} 코디 추천</h2>
+      <div class="msg">${item}</div>
+      <div class="links">
+        <a class="link-btn" href="${naverSearchLink(state.sub + ' 코디')}" target="_blank">네이버에서 ${state.sub} 코디 더보기</a>
+      </div>
+      <div class="tip">마음에 들지 않으면 같은 버튼을 다시 눌러서 다른 느낌으로 골라보세요.</div>
+    `;
+    return;
+  }
+  if(state.main === "음식"){
+    const item = randomPick(foodData[state.weather]);
+    result.innerHTML = `
+      <h2>${state.weather} 날씨 음식 추천</h2>
+      <div class="msg">오늘은 <b>${item.name}</b> 어떠세요?
+${item.desc}</div>
+      <div class="links">
+        <a class="link-btn" href="${naverSearchLink(item.name + ' 맛집')}" target="_blank">${item.name} 맛집 찾기</a>
+      </div>
+      <div class="tip">음식 추천에서는 코디 세부 버튼이 자동으로 숨겨져요.</div>
+    `;
+    return;
+  }
+  if(state.main === "카페"){
+    const item = randomPick(cafeData[state.weather]);
+    result.innerHTML = `
+      <h2>${state.weather} 날씨 카페 추천</h2>
+      <div class="msg">오늘은 <b>${item.name}</b> 어때요?
+${item.desc}</div>
+      <div class="links">
+        <a class="link-btn" href="${naverSearchLink(item.name + ' 맛집')}" target="_blank">${item.name} 맛집 찾기</a>
+      </div>
+      <div class="tip">링크는 한 개만 연결되며, 추천 메뉴 기준으로 바로 검색돼요.</div>
+    `;
+  }
+}
+
+function buildFortunePool(){
+  const openings = [
+    "오늘은", "지금은", "이번 하루는", "현재 흐름은", "당신의 운세에는",
+    "조용하지만", "부드럽게", "은근하게", "생각보다 크게", "따뜻하게"
+  ];
+  const subjects = [
+    "금전운", "대인운", "애정운", "기회운", "변화운",
+    "소통운", "건강운", "집중운", "행동운", "감정운"
+  ];
+  const positives = [
+    "서서히 열리고 있어요", "좋은 쪽으로 움직이고 있어요", "의외의 도움을 받을 수 있어요",
+    "작은 선택이 큰 성과로 이어질 수 있어요", "마음먹은 일이 순조롭게 풀릴 가능성이 높아요",
+    "귀인의 기운이 가까이 와 있어요", "기다리던 흐름이 살아날 수 있어요",
+    "한 번의 용기가 좋은 결과를 부를 수 있어요", "오늘 결정한 일이 오래 남는 힘이 될 수 있어요",
+    "부드러운 말 한마디가 큰 호감을 만들어요"
+  ];
+  const positiveClosings = [
+    "조급함만 내려놓으면 더 좋아집니다.", "작은 기회를 가볍게 넘기지 마세요.",
+    "오늘은 자신감을 조금 더 내도 괜찮아요.", "따뜻한 태도가 복을 부릅니다.",
+    "망설임보다 실행이 더 유리한 하루예요.", "당신 편이 되어줄 사람이 보입니다.",
+    "느리게 가도 방향만 맞으면 괜찮아요.", "평소보다 밝은 선택이 잘 맞아요.",
+    "기분 좋은 소식이 가까운 곳에서 들어올 수 있어요.", "차분함이 행운을 키워줍니다."
+  ];
+
+  const cautionsA = [
+    "오늘은 말보다 침묵이 나은 순간이 있어요", "예상 밖의 지출을 조심해야 해요",
+    "가까운 사람과의 오해가 생길 수 있어요", "성급한 결정은 아쉬움을 남길 수 있어요",
+    "피곤함이 집중력을 떨어뜨릴 수 있어요", "감정 기복이 판단을 흔들 수 있어요",
+    "작은 실수가 반복될 수 있어요", "기다리던 답이 늦어질 수 있어요",
+    "서두르면 손해가 커질 수 있어요", "너무 큰 기대는 실망으로 이어질 수 있어요"
+  ];
+  const cautionsB = [
+    "오늘은 한 박자 쉬어가는 마음이 필요합니다.", "확인 한 번 더가 운을 지켜줘요.",
+    "지갑과 말투를 함께 조심하면 무난하게 지나갑니다.", "무리한 약속은 다음으로 미루는 편이 좋아요.",
+    "익숙한 일도 다시 점검해보세요.", "예민한 반응은 오히려 손해가 될 수 있어요.",
+    "조용히 정리하면 문제를 줄일 수 있어요.", "중요한 선택은 저녁보다 낮 시간이 더 좋아요.",
+    "지금은 방어가 공격보다 유리한 흐름입니다.", "오늘은 속도보다 안정이 먼저예요."
+  ];
+
+  const pool = [];
+  for(let i=0;i<450;i++){
+    const msg = `${openings[i % openings.length]} ${subjects[i % subjects.length]}이 ${positives[i % positives.length]} ${positiveClosings[i % positiveClosings.length]}`;
+    pool.push({ tone:"positive", text: msg });
+  }
+  for(let i=0;i<50;i++){
+    const msg = `${cautionsA[i % cautionsA.length]}. ${cautionsB[i % cautionsB.length]}`;
+    pool.push({ tone:"caution", text: msg });
+  }
+  return pool;
+}
+const fortunePool = buildFortunePool();
+
+function seededNumber(str){
+  let total = 0;
+  for(let i=0;i<str.length;i++){
+    total = (total * 31 + str.charCodeAt(i)) % 1000000;
+  }
+  return total;
+}
+
+function generatePremiumMessage(kind, profile){
+  const seed = seededNumber(
+    kind + profile.birth + profile.birthTime + profile.type + profile.leap + profile.gender
+  );
+
+  const energy = ["목(木)", "화(火)", "토(土)", "금(金)", "수(水)"];
+  const flow = ["상승", "정체", "전환", "확장", "응축"];
+  const relation = ["조화", "충돌", "균형", "긴장", "보완"];
+
+  const e = energy[seed % energy.length];
+  const f = flow[(seed + 3) % flow.length];
+  const r = relation[(seed + 5) % relation.length];
+
+  if(kind === "전통사주"){
+    return `전통사주 해석
+
+당신의 사주는 ${e} 기운을 중심으로 형성되어 있으며,
+현재 흐름은 '${f}'의 단계에 들어와 있습니다.
+
+이 시기는 결과를 급하게 만들기보다는
+방향을 바로 잡는 것이 훨씬 중요한 시점입니다.
+
+특히 인간관계와 선택의 흐름에서
+${r}의 기운이 강하게 작용하고 있어
+누구를 만나고 어떤 결정을 하느냐에 따라
+운의 방향이 크게 달라질 수 있습니다.
+
+재물운은 단기 이익보다는
+누적형 구조에서 강하게 작용하는 타입이며,
+지금은 씨앗을 심는 흐름입니다.
+
+📌 핵심 조언
+지금은 결과보다 '방향'이 운을 결정합니다.
+급하게 얻는 것보다 오래 가는 것을 선택하세요.`;
+  }
+
+  if(kind === "토정비결"){
+    return `토정비결 해석
+
+올해의 전체 흐름은 '${f}'입니다.
+
+초반에는 체감되는 성과가 작거나
+정체된 느낌을 받을 수 있지만,
+중반 이후부터 서서히 상승 흐름이 만들어집니다.
+
+특히 ${e} 기운이 강해지는 시기에는
+기회가 자연스럽게 연결되는 특징이 있습니다.
+
+사람운에서는 '${r}'의 흐름이 나타나
+잘 맞는 인연은 오래가고
+맞지 않는 인연은 자연스럽게 정리됩니다.
+
+금전운은 무리한 확장보다
+지키는 선택이 훨씬 유리합니다.
+
+📌 핵심 조언
+올해는 '버티는 힘'이 결국 결과를 만듭니다.
+무리한 확장은 오히려 운을 깎습니다.`;
+  }
+
+  return `궁합 해석
+
+두 사람의 기운 흐름을 보면
+기본적으로 '${r}'의 관계 구조를 가지고 있습니다.
+
+이 관계는 처음에는 강한 끌림보다는
+편안함과 안정감에서 시작되는 특징이 있습니다.
+
+한쪽은 ${e} 성향으로 감정 표현이 비교적 직접적이고,
+다른 한쪽은 신중하게 반응하는 흐름이 있어
+속도 차이에서 갈등이 생길 수 있습니다.
+
+하지만 이 구조는 오히려
+서로를 보완하는 관계로 발전할 가능성이 높습니다.
+
+특히 대화와 이해가 쌓일수록
+관계의 깊이가 점점 단단해지는 형태입니다.
+
+연애운 기준으로는
+짧고 강한 관계보다
+길게 가는 인연에 더 가까운 궁합입니다.
+
+📌 핵심 조언
+이 관계는 '속도'보다 '지속성'이 중요합니다.
+서두르지 않으면 오히려 더 좋은 결과로 이어집니다.`;
+}
+
+
+function getFortuneProfile(){
+  const birth = document.getElementById('birth').value;
+  const birthTime = document.getElementById('birthTime').value;
+  return {
+    birth,
+    birthTime,
+    type: fortuneState.type,
+    leap: fortuneState.leap || "평달",
+    gender: fortuneState.gender
+  };
+}
+function validateFortuneProfile(includeLeap = false){
+  const profile = getFortuneProfile();
+  if(!profile.birth || !profile.birthTime || !profile.type || !profile.gender){
+    alert("생년월일, 태어난 시간, 음력/양력, 남/여를 먼저 선택해주세요.");
+    return null;
+  }
+  if(includeLeap && !profile.leap){
+    alert("평달 또는 윤달을 선택해주세요.");
+    return null;
+  }
+  return profile;
+}
+
+function showFortune(){
+  const profile = validateFortuneProfile(true);
+  if(!profile) return;
+
+  const seed = seededNumber(profile.birth + profile.birthTime + profile.type + profile.leap + profile.gender + Date.now());
+  const item = fortunePool[seed % fortunePool.length];
+  const keywordSet = [
+    "행운 · 기회 · 흐름",
+    "안정 · 회복 · 귀인",
+    "선택 · 타이밍 · 집중",
+    "대화 · 재물 · 이동",
+    "감정 · 관계 · 정리"
+  ];
+  const keyword = keywordSet[seed % keywordSet.length];
+  const toneLine = item.tone === "positive"
+    ? "오늘은 전반적으로 부드럽고 좋은 흐름이 강합니다."
+    : "오늘은 무리하지 않고 차분하게 가는 편이 더 좋은 날입니다.";
+
+  document.getElementById('result').innerHTML = `
+    <h2>🔮 무료 오늘의 운세</h2>
+    <div class="msg">${item.text}
+
+${toneLine}
+
+✨ 오늘의 키워드
+${keyword}
+
+입력 정보
+${profile.birth} · ${profile.birthTime} · ${profile.type} · ${profile.leap} · ${profile.gender}</div>
+    <div class="tip">500가지 운세 풀에서 랜덤으로 보여줘요. 다시 조회하면 다른 문장이 나올 수 있어요.</div>
+  `;
+}
+
+async function initPiSdkIfNeeded(){
+  if(window.Pi && !piUser){
+    try{
+      Pi.init({ version: "2.0", sandbox: false });
+    }catch(e){}
+    try{
+      const scopes = ['payments'];
+      const auth = await Pi.authenticate(scopes, function(payment){});
+      piUser = auth && auth.user ? auth.user : null;
+    }catch(err){
+      console.log('Pi auth skipped or failed', err);
+    }
+  }
+}
+
+
+function renderPartnerInputs(){
+  const fortuneSection = document.getElementById('fortuneSection');
+  if(document.getElementById('partnerSection')) return;
+
+  const div = document.createElement('div');
+  div.id = "partnerSection";
+
+  div.innerHTML = `
+    <hr class="soft"/>
+    <div class="badge">상대방 정보 입력</div>
+
+    <div class="subgrid">
+      <input type="date" id="partnerBirth" class="input-box" />
+      <input type="time" id="partnerTime" class="input-box" />
+    </div>
+
+    <div class="sub-label">달력 기준</div>
+    <div class="subgrid">
+      <button class="sub-btn" onclick="setPartner('type','양력')">양력</button>
+      <button class="sub-btn" onclick="setPartner('type','음력')">음력</button>
+    </div>
+
+    <div class="sub-label">월 구분</div>
+    <div class="subgrid">
+      <button class="sub-btn" onclick="setPartner('leap','평달')">평달</button>
+      <button class="sub-btn" onclick="setPartner('leap','윤달')">윤달</button>
+    </div>
+
+    <div class="sub-label">성별</div>
+    <div class="subgrid">
+      <button class="sub-btn" onclick="setPartner('gender','남')">남</button>
+      <button class="sub-btn" onclick="setPartner('gender','여')">여</button>
+    </div>
+  `;
+  fortuneSection.appendChild(div);
+}
+
+function setPartner(group, value){
+  partnerState[group] = value;
+}
+
+function validateCompatibility(){
+  const me = validateFortuneProfile(true);
+  if(!me) return null;
+
+  const partnerBirth = document.getElementById('partnerBirth')?.value;
+  const partnerTime = document.getElementById('partnerTime')?.value;
+
+  if(!partnerBirth || !partnerTime || !partnerState.type || !partnerState.gender){
+    alert("상대방 정보도 모두 입력해주세요.");
+    return null;
+  }
+
+  return { me };
+}
+
+
+async function startPremiumFlow(kind){
+  if(kind === "궁합"){ renderPartnerInputs(); }
+  const profile = validateFortuneProfile(true);
+  if(!profile) return;
+
+  await initPiSdkIfNeeded();
+
+  if(window.Pi && Pi.createPayment){
+    try{
+      const paymentData = {
+        amount: 0.1,
+        memo: `${kind} 이용권`,
+        metadata: { category: kind, birth: profile.birth, type: profile.type, leap: profile.leap, gender: profile.gender }
+      };
+
+      
+      const callbacks = {
+
+        onReadyForServerApproval: function(paymentId) {
+          fetch("https://hint-pi-server-production.up.railway.app/approve", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ paymentId })
+          });
+        },
+
+        onReadyForServerCompletion: function(paymentId, txid) {
+          fetch("https://hint-pi-server-production.up.railway.app/complete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ paymentId, txid })
+          }).then(() => {
+            renderPremiumResult(kind, profile, true);
+          });
+        },
+
+        onCancel: function(paymentId){
+          alert("결제가 취소되었습니다.");
+        },
+
+        onError: function(error, payment){
+          console.log(error, payment);
+          alert("결제 오류 발생");
+        }
+      };
+
+
+      Pi.createPayment(paymentData, callbacks);
+      return;
+    }catch(e){
+      alert("Pi Browser 결제 호출은 되었지만, 현재 환경에서는 완료 확인이 어려울 수 있어요.");
+      console.log(e);
+    }
+  }
+
+  const preview = confirm(`${kind}은(는) 0.1π 유료 카테고리예요.\n현재 브라우저에서는 실제 결제가 연결되지 않아 미리보기만 볼까요?`);
+  if(preview){
+    renderPremiumResult(kind, profile, false);
+  }
+}
+
+function renderPremiumResult(kind, profile, paid){
+  const paidBadge = paid ? "결제 완료" : "미리보기";
+  const paidMsg = paid
+    ? "0.1π 결제가 확인된 프리미엄 결과입니다."
+    : "현재는 미리보기 결과예요. 실제 결제는 Pi Browser의 Pi SDK 연결 환경에서 작동합니다.";
+  const content = generatePremiumMessage(kind, profile);
+
+  document.getElementById('result').innerHTML = `
+    <h2>✨ ${kind} · ${paidBadge}</h2>
+    <div class="msg">${content}
+
+입력 정보
+${profile.birth} · ${profile.birthTime} · ${profile.type} · ${profile.leap} · ${profile.gender}</div>
+    <div class="tip">${paidMsg}</div>
+  `;
+}
+
+refreshResult();
+</script>
+</body>
+</html>
